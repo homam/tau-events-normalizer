@@ -9,7 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "moment": "^2.13.0",
     "redis": "^2.5.3",
+    "request": "^2.72.0",
     "rethinkdb": "^2.3.0",
     "rx": "^4.1.0",
     "rx-node": "^1.0.2",
