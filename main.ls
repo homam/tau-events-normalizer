@@ -6,11 +6,16 @@ connect = ->
   from-web-socket 'ws://104.130.161.64:4040'
     .filter ({name}) -> name == \all-campaigns
     .map ({data}) -> JSON.parse data
+    .map (x) -> 
+        if x.country != 'PK' and x.eventType == 'subscription' and !x.q42
+            console.log 'subscription', x
+        x
     .filter (x) -> !!x.q42
     #.filter (x) -> x.ip == '80.227.47.62' && x.headers?['user-agent'] == 'HOMAM'
 
 
-{output, info} = (require \./tau-redis) connect
+{output, info, listen} = (require \./tau-redis)!
+listen connect
 record = require \./utils/esls
 
 

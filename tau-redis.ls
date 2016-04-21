@@ -9,11 +9,6 @@ session = 30 * 60 * 1000
 _ids = <[campaignVisitId sessionId clientSessionId visitId subscriberId campaignId ip ipTokens.ip2 ipTokens.ip3 platform creative suffix pageId country headers.user-agent uaTokens.os uaTokens.model originalQueryTokens]>
 
 
-emitter = do ->
-    events = new require('events')
-    return new events.EventEmitter!
-
-
 merge = ({q42, events}:me) ->
   
   q42-ids = events |> foldl do 
@@ -27,17 +22,12 @@ merge = ({q42, events}:me) ->
   q42: q42
 
 
-module.exports = start = (connect) ->
+module.exports = ->
 
-  connect!
-    .flatMap (x) -> on-event x
-    .subscribe do
-        (x) ->
-        (ex) ->
-            console.error ex
-        ->
-            console.log "disconnected!"
-            connect!
+  emitter = do ->
+    events = new require('events')
+    return new events.EventEmitter!
+
 
   on-event = ({q42}:event) ->
 
@@ -107,8 +97,21 @@ module.exports = start = (connect) ->
       Rx.Observable.fromEventPattern do
         (h) -> emitter.addListener 'info', h
         (h) -> emitter.removeListener 'info', h
+
+  reconnect = (connect) ->
+    connect!
+    .flatMap (x) -> on-event x
+    .subscribe do
+        (x) ->
+        (ex) ->
+            console.error ex
+        ->
+            console.log "disconnected!"
+            reconnect connect
+
   {
     output
     info
+    listen: reconnect
   }
 
