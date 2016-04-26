@@ -6,10 +6,10 @@ connect = ->
   from-web-socket 'ws://104.130.161.64:4040'
     .filter ({name}) -> name == \all-campaigns
     .map ({data}) -> JSON.parse data
-    .map (x) -> 
-        if x.country != 'PK' and x.eventType == 'subscription' and !x.q42
-            console.log 'subscription', x
-        x
+    # .map (x) -> 
+    #     if x.country != 'PK' and x.eventType == 'subscription' and !x.q42
+    #         console.log 'subscription', x
+    #     x
     .filter (x) -> !!x.q42
     #.filter (x) -> x.ip == '80.227.47.62' && x.headers?['user-agent'] == 'HOMAM'
 
@@ -18,21 +18,33 @@ connect = ->
 listen connect
 record = require \./utils/esls
 
+trace = (msg, x) ->
+    console.log msg
+    x
 
-output = output
-    .flatMap ({events}) -> record {creationTime: Date.now!, events}
+output = output.controlled()
+
+output1 = output
+    .flatMap ({events}) -> 
+        Rx.Observable.defer -> 
+            Rx.Observable.fromPromise(record {creationTime: Date.now!, events})
+        .retryWhen (errors) ->
+            errors.map((x) -> trace("err = #{x}", x)).delay(200)
+    #.flatMapWithMaxConcurrent 100, ({events}) -> Rx.Observable.defer (-> record {creationTime: Date.now!, events})
     .map ({q42, events}:me) ->
         (JSON.stringify me) + "\n"
+        output.request 1
 
 info
     .filter (.level > 2)
     .subscribe (x) ->
         console.log x
 
+output.request 1
 fs = require \fs
 writer = fs.createWriteStream './output.bson', {flags: 'a'}
 
-subscription = RxNode.writeToStream output, writer, 'utf8'
+subscription = RxNode.writeToStream output1, writer, 'utf8'
 
 
 

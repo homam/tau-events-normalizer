@@ -78,6 +78,7 @@ module.exports = ->
           emitter.emit 'info' {level: 3, message: "oldest not found, probably already expired, q42: #{q42}, expiry: #{expiry}"}
           setImmediate tau-processor
         else
+          emitter.emit 'info' {level: 0, message: "q42 being written #{q42}"}
           emitter.emit 'q42-session-ended', (merge oldest)
           _ <- bind-p cache.remove q42
           setImmediate tau-processor
