@@ -22,7 +22,7 @@ merge = ({q42, events}:me) ->
   q42: q42
 
 
-module.exports = ->
+module.exports = ({insert}) ->
 
   emitter = do ->
     events = new require('events')
@@ -79,7 +79,9 @@ module.exports = ->
           setImmediate tau-processor
         else
           emitter.emit 'info' {level: 0, message: "q42 being written #{q42}"}
-          emitter.emit 'q42-session-ended', (merge oldest)
+          merged = merge oldest
+          emitter.emit 'q42-session-ended', merged
+          _ <- bind-p insert merged
           _ <- bind-p cache.remove q42
           setImmediate tau-processor
 
@@ -101,7 +103,7 @@ module.exports = ->
 
   reconnect = (connect) ->
     connect!
-    .flatMap (x) -> on-event x
+    #.flatMap (x) -> on-event x
     .subscribe do
         (x) ->
         (ex) ->
