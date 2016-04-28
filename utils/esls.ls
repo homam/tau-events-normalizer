@@ -70,9 +70,9 @@ ElasticsearchClient = (endpoint) ->
 
 elasticsearch-client = new ElasticsearchClient \http://146.20.12.209:9200
 
-module.exports = insert-normalized-q42 = (q42) ->
+module.exports = insert-normalized-q42 = ({creation-time, events}) ->
     elasticsearch-client.bulk-insert-to-time-based-index do
         \mobi_one_normalized
         \event
-        q42.creation-time
-        q42.events
+        creation-time
+        events
