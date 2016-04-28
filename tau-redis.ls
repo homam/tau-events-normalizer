@@ -22,7 +22,7 @@ merge = ({q42, events}:me) ->
   q42: q42
 
 
-module.exports = ->
+module.exports = (semaphore, record) ->
 
   emitter = do ->
     events = new require('events')
@@ -58,6 +58,11 @@ module.exports = ->
 
   tau-processor = ->
 
+    sem-size = semaphore.getSize!
+    sem-callbacks = semaphore.getCallbacks!.length
+    if sem-size > 0 or sem-callbacks > 0
+      emitter.emit 'info' {level: 1, message: "semaphore: #{sem-size}, #{sem-callbacks}"}
+    _ <- semaphore.waitOne
 
     o <- bind-p tau.shift!
 
@@ -78,10 +83,14 @@ module.exports = ->
           emitter.emit 'info' {level: 3, message: "oldest not found, probably already expired, q42: #{q42}, expiry: #{expiry}"}
           setImmediate tau-processor
         else
-          emitter.emit 'info' {level: 0, message: "q42 being written #{q42}"}
-          emitter.emit 'q42-session-ended', (merge oldest)
-          _ <- bind-p cache.remove q42
           setImmediate tau-processor
+          emitter.emit 'info' {level: 0, message: "q42 being written #{q42}"}
+          merged = merge oldest
+          emitter.emit 'q42-session-ended', merged
+          _ <- bind-p record merged
+          _ <- bind-p cache.remove q42
+    
+    semaphore.release!
 
 
   tau-processor!
